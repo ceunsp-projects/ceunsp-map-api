@@ -1,0 +1,21 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.tslint": false,
+    "source.fixAll.eslint": true
+  },
+  "editor.formatOnPaste": false,
+  "editor.formatOnSave": false,
+  "editor.formatOnType": false,
+  "editor.tabSize": 2,
+  "eslint.enable": true,
+  "files.exclude": {
+    "**/.DS_Store": true,
+    ".docker-data": true,
+    "**/.git": true,
+    "**/.hg": true,
+    "**/.svn": true,
+    "**/CVS": true,
+    "dist": true
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+}
