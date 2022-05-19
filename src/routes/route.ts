@@ -1,28 +1,21 @@
-import { randomUUID } from 'crypto';
 import { Router } from 'express';
 import multer from 'multer';
-import path from 'path';
-import placeService from '../services/place';
+import multerConfig from '../config/multer';
+import placeService, { MulterExpressFile } from '../services/place';
 
 const Route = Router();
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'tmp/')
-  },
-  filename(req, file, cb) {
-    cb(null, randomUUID() + path.extname(file.originalname))
-  }
-});
-
-const upload = multer({ storage });
+const upload = multer(multerConfig());
 
 Route.get('/', (req, res) => {
   return res.json({ message: "Seja bem vindo!"});
 });
 
 // Place
-Route.get('/places', placeService.get);
-Route.post('/place/save', upload.single('place'), placeService.save);
+Route.get('/places', placeService.list);
+Route.get('/place/:id', placeService.details);
+Route.post('/place/save', upload.single('place'), (req, res) => {
+  return placeService.save(req, res, req.file as MulterExpressFile)
+});
 
 export default Route;

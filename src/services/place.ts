@@ -7,30 +7,63 @@ import { readFile } from 'fs/promises';
 import Place from '../models/place';
 import apiService from './api';
 import { KEY_GOOGLE_MAPS } from '../settings';
+import quickSort from '../helpers/quickSort';
 import bubbleSort from '../helpers/bubbleSort';
+import axios from 'axios';
 
+export type MulterExpressFile = Express.Multer.File & Express.MulterS3.File;
 class PlaceService {
-  async get(req: Request, res: Response) {
-    const places = await Place.find({});
+  async list(req: Request, res: Response) {
+    const places = await Place.find();
 
     if (!places?.length) return res.json({ message: 'Nenhum local foi identificado em nossa base.'})
 
-    places.map((place) => ({...places, items: bubbleSort(place.items)}));
+    places.map((place) => ({...places, items: quickSort(place.items)}));
 
     return res.json(places ?? []);
   }
 
-  async save(req: Request, res: Response) {
-    const placePicture = req.file;
+  async details(req: Request, res: Response) {
+    const id = req.params.id;
+    const place = await Place.findById(id, { name: 1, location: 1, items: 1 }).lean();
+
+    if (!place) return res.json({ message: 'Esse local não existe em nossa base.'})
+
+    const placeDetails = place;
+    const items = bubbleSort(placeDetails.items);
+
+    return res.json({ ...placeDetails, items } ?? []);  }
+
+  async save(req: Request, res: Response, placePicture: MulterExpressFile) {
+    const placePath = placePicture.location ? placePicture.location : placePicture.path;
     const { latitude, longitude } = req.body;
 
-    if(!placePicture) return res.json({ status: 400, message: 'Envie uma foto!'});
+    // const validationSchema = yup.object().shape({
+    //   location: yup.object({
+    //     latitude: yup.number(),
+    //     longitude: yup.number()
+    //   })
+    // })
 
-    const [modelCocoSsd, modelMobileNet, imageBuffer] = await Promise.all([
+    // const validation = await validationSchema.validate(req.body);
+
+    if(!placePicture) return res.json({ status: 400, message: 'Envie uma foto!'});
+    const teste = Buffer.from(placePath);
+    // console.log({ teste, placePicture, teste2 });
+
+    const [modelCocoSsd, modelMobileNet] = await Promise.all([
       cocoSsd.load(),
-      mobilenet.load(),
-      readFile(placePicture.path)
+      mobilenet.load()
     ]);
+
+    let imageBuffer: Buffer
+
+    if (placePicture.location) {
+      const response = await axios({ url: placePath })
+      imageBuffer= Buffer.from(response.data, 'base64');
+    } else {
+      imageBuffer = await readFile(placePath);
+    }
 
     const imgTensor = tf.node.decodeImage(new Uint8Array(imageBuffer), 3);
     const cocoSsdPrediction = await modelCocoSsd.detect(imgTensor);
@@ -85,6 +118,8 @@ class PlaceService {
     const nameLocation = result?.name;
     const location = result?.location;
 
+    if (!nameLocation) return res.status(400).json({ message: 'Não foi possível identificar em qual local da faculdade você está.'});
+
     let place = await Place.findOneAndUpdate(
       { name: nameLocation },
       { $set: { location }, $addToSet: { items: { $each: filteredPredictions }}}
@@ -92,7 +127,7 @@ class PlaceService {
 
     if (!place) place = await Place.create({ name: nameLocation, location, items: filteredPredictions});
 
-    return res.json({ place, items: filteredPredictions});
+    return res.json({ place, placePicture});
   }
 }
 
