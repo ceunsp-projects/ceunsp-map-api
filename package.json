@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start:dev": "nodemon --inspect --transpile-only --ignore-watch node_modules",
+    "start:dev": "nodemon --inspect --transpile-only --trace-warnings --ignore-watch  node_modules",
     "start:prod": "yarn build && node build/index.js",
     "build": "rimraf ./build && tsc"
   },

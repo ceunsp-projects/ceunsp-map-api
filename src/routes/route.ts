@@ -21,6 +21,8 @@ Route.get('/', (req, res) => {
   return res.json({ message: "Seja bem vindo!"});
 });
 
+// Place
+Route.get('/places', placeService.get);
 Route.post('/place/save', upload.single('place'), placeService.save);
 
 export default Route;

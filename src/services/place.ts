@@ -7,10 +7,15 @@ import { readFile } from 'fs/promises';
 import Place from '../models/place';
 import apiService from './api';
 import { KEY_GOOGLE_MAPS } from '../settings';
+import bubbleSort from '../helpers/bubbleSort';
 
 class PlaceService {
   async get(req: Request, res: Response) {
-    const places = Place.find();
+    const places = await Place.find({});
+
+    if (!places?.length) return res.json({ message: 'Nenhum local foi identificado em nossa base.'})
+
+    places.map((place) => ({...places, items: bubbleSort(place.items)}));
 
     return res.json(places ?? []);
   }
