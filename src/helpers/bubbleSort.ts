@@ -1,15 +1,15 @@
 export default function bubbleSort(items: string[]) {
-  let swapped = true;
+  let changed = true;
 	do {
-		swapped = false;
+		changed = false;
 		for (let j = 0; j < items.length; j++) {
 			if (items[j] > items[j + 1]) {
 				const temp = items[j];
 				items[j] = items[j + 1];
 				items[j + 1] = temp;
-				swapped = true;
+				changed = true;
 			}
 		}
-	} while (swapped);
+	} while (changed);
 	return items;
 }
