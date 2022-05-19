@@ -9,4 +9,4 @@ export const ENVIROMENT_MONGO = IS_DEV ? env.ENVIROMENT_DEV_MONGO : env.ENVIROME
 export const ENDPOINT_COMPLETED_MONGO = ENDPOINT_MONGO + ENVIROMENT_MONGO;
 
 export const ENDPOINT_GOOGLE_MAPS = 'https://maps.googleapis.com/maps/api/';
-export const KEY_GOOGLE_MAPS = 'AIzaSyAlHb0pmC4B0A0J88bdhPQ6awv1X0GNB5s';
+export const KEY_GOOGLE_MAPS = env.KEY_GOOGLE_MAPS ?? '';
