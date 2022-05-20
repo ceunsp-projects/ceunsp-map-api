@@ -20,7 +20,7 @@ app.use((error: any, req: any, res: any, next: any) => {
   res.sendStatus(500);
 });
 
-app.listen(3333, () => {
+app.listen(process.env.PORT || 3333, () => {
   console.log('Aplication Status -> Conectado')
 });
 
