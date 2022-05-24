@@ -19,5 +19,6 @@
     ],
     "rules": {
         "unused-imports/no-unused-imports-ts": "error",
+        "no-extra-boolean-cast": "off"
     }
 }

@@ -6,10 +6,11 @@ import { uniq } from 'lodash';
 import { readFile } from 'fs/promises';
 import Place from '../models/place';
 import apiService from './api';
-import { KEY_GOOGLE_MAPS } from '../settings';
+import { IS_DEV, KEY_GOOGLE_MAPS } from '../settings';
 import quickSort from '../helpers/quickSort';
 import bubbleSort from '../helpers/bubbleSort';
-import axios from 'axios';
+import { S3 } from 'aws-sdk';
+import fetch from 'node-fetch';
 
 export type MulterExpressFile = Express.Multer.File & Express.MulterS3.File;
 class PlaceService {
@@ -35,32 +36,21 @@ class PlaceService {
     return res.json({ ...placeDetails, items } ?? []);  }
 
   async save(req: Request, res: Response, placePicture: MulterExpressFile) {
-    const placePath = placePicture.location ? placePicture.location : placePicture.path;
+    const placePath = !!placePicture?.location ? placePicture.location : placePicture.path;
     const { latitude, longitude } = req.body;
 
-    // const validationSchema = yup.object().shape({
-    //   location: yup.object({
-    //     latitude: yup.number(),
-    //     longitude: yup.number()
-    //   })
-    // })
-
-    // const validation = await validationSchema.validate(req.body);
-
     if(!placePicture) return res.json({ status: 400, message: 'Envie uma foto!'});
-    const teste = Buffer.from(placePath);
-    // console.log({ teste, placePicture, teste2 });
 
     const [modelCocoSsd, modelMobileNet] = await Promise.all([
       cocoSsd.load(),
       mobilenet.load()
     ]);
 
-    let imageBuffer: Buffer
+    let imageBuffer: any;
 
     if (placePicture.location) {
-      const response = await axios({ url: placePath })
-      imageBuffer= Buffer.from(response.data, 'base64');
+      const response = await fetch(placePath);
+      imageBuffer = await response.arrayBuffer();
     } else {
       imageBuffer = await readFile(placePath);
     }
@@ -126,6 +116,22 @@ class PlaceService {
     );
 
     if (!place) place = await Place.create({ name: nameLocation, location, items: filteredPredictions});
+
+
+    if (!IS_DEV) {
+      const s3 = new S3();
+
+      // console.log(placePicture);
+      // const response = await s3.upload({
+      //   Bucket: AWS_BUCKET,
+      //   ACL: 'public-read',
+      //   ContentType: placePicture.mimetype,
+      //   Key: randomUUID() + path.extname(placePicture.originalname),
+      //   Body: placePicture.path,
+      // }).promise();
+
+      // console.log('AQUII', response)
+    }
 
     return res.json({ place, placePicture});
   }
