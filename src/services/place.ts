@@ -10,6 +10,7 @@ import { KEY_GOOGLE_MAPS } from '../settings';
 import bubbleSort from '../helpers/bubbleSort';
 import fetch from 'node-fetch';
 import selectionSort from '../helpers/selectionSort';
+import { Translate } from '@google-cloud/translate/build/src/v2';
 
 export type MulterExpressFile = Express.Multer.File & Express.MulterS3.File;
 class PlaceService {
@@ -60,20 +61,26 @@ class PlaceService {
 
     const predictions = [...cocoSsdPrediction, ...mobileNetPrediction];
 
-    const newPredictions = predictions.reduce((acc: string[], item: {className?: string; class?: string}) => {
+    const translate = new Translate({ key: KEY_GOOGLE_MAPS });
+
+    const newPredictions = await predictions.reduce(async (previousPromise: Promise<string[]>, item: {className?: string; class?: string}) => {
+      const acc = await previousPromise;
+
       const name = item?.class ? item.class : item?.className ?? ''
       const nameSplited = name.split(',');
       const hasMoreThanOne = nameSplited.length > 1;
 
-      if (hasMoreThanOne) nameSplited.map((x: string) => {
-        acc.push(x?.trim());
+      if (hasMoreThanOne) nameSplited.map(async (x: string) => {
+        const translatedName = await translate.translate(x?.trim(), 'pt-br');
+        acc.push(translatedName[0]);
         return x;
       });
 
-      acc.push(hasMoreThanOne ? nameSplited[0] : name);
+      const translatedName = await translate.translate(hasMoreThanOne ? nameSplited[0] : name, 'pt-br');
+      acc.push(translatedName[0])
 
       return acc;
-    }, [])
+    }, Promise.resolve([]));
 
     const filteredPredictions = uniq(newPredictions);
 
