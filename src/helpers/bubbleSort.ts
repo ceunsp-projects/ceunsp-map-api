@@ -1,4 +1,4 @@
-export default function bubbleSort(items: string[]) {
+export default function bubbleSort(items: any[]) {
   let changed = true;
 	do {
 		changed = false;

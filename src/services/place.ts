@@ -6,22 +6,21 @@ import { uniq } from 'lodash';
 import { readFile } from 'fs/promises';
 import Place from '../models/place';
 import apiService from './api';
-import { IS_DEV, KEY_GOOGLE_MAPS } from '../settings';
-import quickSort from '../helpers/quickSort';
+import { KEY_GOOGLE_MAPS } from '../settings';
 import bubbleSort from '../helpers/bubbleSort';
-import { S3 } from 'aws-sdk';
 import fetch from 'node-fetch';
+import selectionSort from '../helpers/selectionSort';
 
 export type MulterExpressFile = Express.Multer.File & Express.MulterS3.File;
 class PlaceService {
   async list(req: Request, res: Response) {
-    const places = await Place.find();
+    const places = await Place.find({}, { name: 1, pictures: 1, location: 1 });
 
     if (!places?.length) return res.json({ message: 'Nenhum local foi identificado em nossa base.'})
 
-    places.map((place) => ({...places, items: quickSort(place.items)}));
+    const sortedPlaces = selectionSort(places, (item) => item.name);
 
-    return res.json(places ?? []);
+    return res.json(sortedPlaces ?? []);
   }
 
   async details(req: Request, res: Response) {
@@ -112,26 +111,18 @@ class PlaceService {
 
     let place = await Place.findOneAndUpdate(
       { name: nameLocation },
-      { $set: { location }, $addToSet: { items: { $each: filteredPredictions }}}
+      {
+        $set: { location },
+        $addToSet: { items: { $each: filteredPredictions }, pictures: { $each: [placePath] }},
+      }
     );
 
-    if (!place) place = await Place.create({ name: nameLocation, location, items: filteredPredictions});
-
-
-    if (!IS_DEV) {
-      const s3 = new S3();
-
-      // console.log(placePicture);
-      // const response = await s3.upload({
-      //   Bucket: AWS_BUCKET,
-      //   ACL: 'public-read',
-      //   ContentType: placePicture.mimetype,
-      //   Key: randomUUID() + path.extname(placePicture.originalname),
-      //   Body: placePicture.path,
-      // }).promise();
-
-      // console.log('AQUII', response)
-    }
+    if (!place) place = await Place.create({
+      name: nameLocation,
+      location,
+      items: filteredPredictions,
+      pictures: [placePath]
+    });
 
     return res.json({ place, placePicture});
   }

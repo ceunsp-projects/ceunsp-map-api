@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import path from 'path';
-import { AWS_ACCESS_KEY_ID, AWS_BUCKET, AWS_DEFAULT_REGION, AWS_SECRET_ACCESS_KEY, IS_DEV } from '../settings';
+import { AWS_ACCESS_KEY_ID, AWS_BUCKET, AWS_BUCKET_DEV, AWS_DEFAULT_REGION, AWS_SECRET_ACCESS_KEY, IS_DEV } from '../settings';
 
 export default function multerConfig() {
   aws.config.update({
@@ -23,7 +23,7 @@ export default function multerConfig() {
     }),
     prod: multerS3({
       s3: new aws.S3(),
-      bucket: AWS_BUCKET,
+      bucket: IS_DEV ? AWS_BUCKET_DEV : AWS_BUCKET,
       acl: 'public-read',
       contentType: multerS3.AUTO_CONTENT_TYPE,
       key: (req, file, cb) => cb(null, randomUUID() + path.extname(file.originalname)),
@@ -32,6 +32,6 @@ export default function multerConfig() {
 
   return {
     dest: path.resolve(__dirname, '..', '..', 'tmp') ,
-    storage: storages[IS_DEV ? 'dev' : 'prod']
+    storage: storages['prod']
   }
 };

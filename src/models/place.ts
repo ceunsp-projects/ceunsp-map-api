@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 
-interface IPlaceModel {
+export interface IPlaceModel {
   name: string,
   location: {
     latitude: number,
@@ -8,23 +8,31 @@ interface IPlaceModel {
     latitudeDelta: number,
     longitudeDelta:  number
   },
+  pictures: string[];
   items: string[];
 }
 
-const PlaceSchema = new Schema({
-  name: {
-    type: String,
-    unique: true,
-    required: true
+const PlaceSchema = new Schema(
+  {
+    name: {
+      type: String,
+      unique: true,
+      required: true
+    },
+    location: {
+      latitude: Number,
+      longitude: Number,
+      latitudeDelta: Number,
+      longitudeDelta:  Number
+    },
+    pictures: [String],
+    items: [String],
   },
-  location: {
-    latitude: Number,
-    longitude: Number,
-    latitudeDelta: Number,
-    longitudeDelta:  Number
-  },
-  items: [String]
-});
+  {
+    autoIndex: true,
+    timestamps: true
+  }
+);
 
 const Place = mongoose.model<IPlaceModel>('place', PlaceSchema);
 export default Place;
