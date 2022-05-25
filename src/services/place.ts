@@ -11,13 +11,14 @@ import bubbleSort from '../helpers/bubbleSort';
 import fetch from 'node-fetch';
 import selectionSort from '../helpers/selectionSort';
 import { Translate } from '@google-cloud/translate/build/src/v2';
+import { isValidObjectId } from 'mongoose';
 
 export type MulterExpressFile = Express.Multer.File & Express.MulterS3.File;
 class PlaceService {
   async list(req: Request, res: Response) {
     const places = await Place.find({}, { name: 1, pictures: 1, location: 1 });
 
-    if (!places?.length) return res.json({ message: 'Nenhum local foi identificado em nossa base.'})
+    if (!places?.length) return res.status(400).json({ message: 'Nenhum local foi identificado em nossa base.'})
 
     const sortedPlaces = selectionSort(places, (item) => item.name);
 
@@ -25,21 +26,57 @@ class PlaceService {
   }
 
   async details(req: Request, res: Response) {
-    const id = req.params.id;
+    const id = req?.params?.id ?? null;
+    const isValidId = isValidObjectId(id);
+
+    if (!id || !isValidId) return res.status(400).json({ message: 'É necessário informar qual local deseja ver os detalhes.' });
+
     const place = await Place.findById(id, { name: 1, location: 1, items: 1 }).lean();
 
-    if (!place) return res.json({ message: 'Esse local não existe em nossa base.'})
+    if (!place) return res.status(400).json({ message: 'Esse local não existe em nossa base.'})
 
     const placeDetails = place;
     const items = bubbleSort(placeDetails.items);
 
-    return res.json({ ...placeDetails, items } ?? []);  }
+    return res.json({ ...placeDetails, items } ?? []);
+  }
 
   async save(req: Request, res: Response, placePicture: MulterExpressFile) {
     const placePath = !!placePicture?.location ? placePicture.location : placePicture.path;
     const { latitude, longitude } = req.body;
 
-    if(!placePicture) return res.json({ status: 400, message: 'Envie uma foto!'});
+    const getLocation = await apiService.googleGeocoding({
+      method: 'GET',
+      url: 'geocode/json',
+      params: {
+        latlng: `${latitude},${longitude}`,
+        key: KEY_GOOGLE_MAPS
+      },
+    });
+
+    const result = getLocation?.results?.reduce(((acc : any, result: any) => {
+      const typesModified = result.address_components?.map((x: any, index: number) => ({types: x?.types, index}));
+      const existPremise = typesModified?.find((modified: any) => modified?.types?.includes('premise'));
+
+      if (existPremise) {
+        const location = result.geometry.location;
+        acc.push({
+          name : result.address_components[existPremise?.index]?.long_name,
+          location: {
+            latitude: location.lat,
+            longitude: location.lng
+          }
+        });
+      }
+7
+      return acc
+    }), [])[0];
+
+    const nameLocation = result?.name;
+    const location = result?.location;
+
+    if(!placePicture) return res.status(400).json({ message: 'Envie uma foto!'});
+    if(!nameLocation || !location) return res.status(400).json({ message: 'Identificamos que você não está na CEUNSP.'});
 
     const [modelCocoSsd, modelMobileNet] = await Promise.all([
       cocoSsd.load(),
@@ -83,36 +120,6 @@ class PlaceService {
     }, Promise.resolve([]));
 
     const filteredPredictions = uniq(newPredictions);
-
-    const getLocation = await apiService.googleGeocoding({
-      method: 'GET',
-      url: 'geocode/json',
-      params: {
-        latlng: `${latitude},${longitude}`,
-        key: KEY_GOOGLE_MAPS
-      },
-    });
-
-    const result = getLocation?.results?.reduce(((acc : any, result: any) => {
-      const typesModified = result.address_components?.map((x: any, index: number) => ({types: x?.types, index}));
-      const existPremise = typesModified?.find((modified: any) => modified?.types?.includes('premise'));
-
-      if (existPremise) {
-        const location = result.geometry.location;
-        acc.push({
-          name : result.address_components[existPremise?.index]?.long_name,
-          location: {
-            latitude: location.lat,
-            longitude: location.lng
-          }
-        });
-      }
-7
-      return acc
-    }), [])[0];
-
-    const nameLocation = result?.name;
-    const location = result?.location;
 
     if (!nameLocation) return res.status(400).json({ message: 'Não foi possível identificar em qual local da faculdade você está.'});
 
