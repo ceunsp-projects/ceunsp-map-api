@@ -42,6 +42,8 @@ class PlaceService {
   }
 
   async save(req: Request, res: Response, placePicture: MulterExpressFile) {
+    if (!placePicture?.location) return res.status(500).json({ message: 'Não foi possível salvar a foto!'});
+
     const placePath = !!placePicture?.location ? placePicture.location : placePicture.path;
     const { latitude, longitude } = req.body;
 
@@ -59,7 +61,10 @@ class PlaceService {
       const existPremise = typesModified?.find((modified: any) => modified?.types?.includes('premise'));
 
       if (existPremise) {
-        const location = result.geometry.location;
+        const location = result?.geometry?.location;
+
+        if (!location) return res.status(400).json({ message: 'Identificamos que você não está na CEUNSP.'});
+
         acc.push({
           name : result.address_components[existPremise?.index]?.long_name,
           location: {
@@ -85,7 +90,7 @@ class PlaceService {
 
     let imageBuffer: any;
 
-    if (placePicture.location) {
+    if (placePicture?.location) {
       const response = await fetch(placePath);
       imageBuffer = await response.arrayBuffer();
     } else {
