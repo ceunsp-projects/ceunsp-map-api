@@ -46,6 +46,8 @@ class PlaceService {
     const placePath = !!placePicture?.location ? placePicture.location : placePicture.path;
     const { latitude, longitude } = req.body;
 
+    if (!latitude || !longitude) return res.status(400).json({ message: 'Não foi possível encontrar a sua localização.'});
+
     const getLocation = await apiService.googleGeocoding({
       method: 'GET',
       url: 'geocode/json',
