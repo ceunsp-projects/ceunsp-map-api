@@ -35,10 +35,9 @@ class PlaceService {
 
     if (!place) return res.status(400).json({ message: 'Esse local não existe em nossa base.'})
 
-    const placeDetails = place;
-    const items = bubbleSort(placeDetails.items);
+    const items = bubbleSort(place.items);
 
-    return res.json({ ...placeDetails, items } ?? []);
+    return res.json({ ...place, items } ?? []);
   }
 
   async save(req: Request, res: Response, placePicture: MulterExpressFile) {
@@ -114,12 +113,12 @@ class PlaceService {
 
       if (hasMoreThanOne) nameSplited.map(async (x: string) => {
         const translatedName = await translate.translate(x?.trim(), 'pt-br');
-        acc.push(translatedName[0]);
+        acc.push(translatedName[0]?.toLocaleLowerCase());
         return x;
       });
 
       const translatedName = await translate.translate(hasMoreThanOne ? nameSplited[0] : name, 'pt-br');
-      acc.push(translatedName[0])
+      acc.push(translatedName[0]?.toLocaleLowerCase());
 
       return acc;
     }, Promise.resolve([]));
