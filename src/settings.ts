@@ -3,6 +3,7 @@ import { env } from 'process';
 
 // Ambiente
 export const IS_DEV = env.IS_DEV ?? false;
+export const force = true;
 
 export const ENDPOINT_MONGO = env.ENDPOINT_MONGO ?? 'mongodb://localhost:27017';
 export const ENVIROMENT_MONGO = IS_DEV ? env.ENVIROMENT_DEV_MONGO : env.ENVIROMENT_PROD_MONGO;
