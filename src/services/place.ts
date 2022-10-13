@@ -9,7 +9,6 @@ import apiService from './api';
 import { KEY_GOOGLE_MAPS } from '../settings';
 import bubbleSort from '../helpers/bubbleSort';
 import fetch from 'node-fetch';
-import selectionSort from '../helpers/selectionSort';
 import { Translate } from '@google-cloud/translate/build/src/v2';
 import { isValidObjectId } from 'mongoose';
 
@@ -20,9 +19,7 @@ class PlaceService {
 
     if (!places?.length) return res.status(400).json({ message: 'Nenhum local foi identificado em nossa base.'})
 
-    const sortedPlaces = selectionSort(places, (item) => item.name);
-
-    return res.json(sortedPlaces ?? []);
+    return res.json(places ?? []);
   }
 
   async details(req: Request, res: Response) {
@@ -40,7 +37,12 @@ class PlaceService {
     return res.json({ ...place, items } ?? []);
   }
 
-  async save(req: Request, res: Response, placePicture: MulterExpressFile) {
+  async save(req: Request, res: Response) {
+    return res.status(200).json(req.body)
+  }
+
+  // @deprecated
+  async saveDeprecated(req: Request, res: Response, placePicture: MulterExpressFile) {
     if (!placePicture?.location) return res.status(500).json({ message: 'Não foi possível salvar a foto!'});
 
     const placePath = !!placePicture?.location ? placePicture.location : placePicture.path;

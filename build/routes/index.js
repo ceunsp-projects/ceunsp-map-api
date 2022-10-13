@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -17,9 +26,25 @@ mongoose_1.default.connect(settings_1.ENDPOINT_COMPLETED_MONGO).then(() => {
 }).catch(err => { console.log('Mongo Status -> Erro. Detalhes:\n', err); });
 app.use((error, req, res, next) => {
     console.log('error middleware -> ', error);
-    res.sendStatus(500);
+    const status = error.status;
+    return res.status(status).json({
+        status,
+        message: error.message
+    });
 });
-app.listen(3333, () => {
+process.on('unhandledRejection', (reason, promise) => {
+    console.error(reason);
+    console.log(promise);
+    throw new Error('ERRO');
+});
+process.on('uncaughtException', err => {
+    console.error(err);
+    throw new Error('ERRO');
+});
+process.on('SIGTERM', () => __awaiter(void 0, void 0, void 0, function* () {
+    process.exit(0);
+}));
+app.listen(process.env.PORT || 3333, () => {
     console.log('Aplication Status -> Conectado');
 });
 exports.default = app;

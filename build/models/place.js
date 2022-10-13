@@ -36,7 +36,14 @@ const PlaceSchema = new mongoose_1.Schema({
         latitudeDelta: Number,
         longitudeDelta: Number
     },
-    items: [String]
+    mainPicture: {
+        type: String
+    },
+    pictures: [String],
+    items: [String],
+}, {
+    autoIndex: true,
+    timestamps: true
 });
 const Place = mongoose_1.default.model('place', PlaceSchema);
 exports.default = Place;
