@@ -8,6 +8,7 @@ export interface IPlaceModel {
     latitudeDelta: number,
     longitudeDelta:  number
   },
+  mainPicture: string;
   pictures: string[];
   items: string[];
 }
@@ -25,6 +26,7 @@ const PlaceSchema = new Schema(
       latitudeDelta: Number,
       longitudeDelta:  Number
     },
+    mainPicture: String,
     pictures: [String],
     items: [String],
   },
