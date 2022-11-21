@@ -26,7 +26,9 @@ const PlaceSchema = new Schema(
       latitudeDelta: Number,
       longitudeDelta:  Number
     },
-    mainPicture: String,
+    mainPicture: {
+      type: String
+    },
     pictures: [String],
     items: [String],
   },
