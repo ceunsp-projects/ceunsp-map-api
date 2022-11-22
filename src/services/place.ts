@@ -19,7 +19,9 @@ class PlaceService {
 
     if (!places?.length) return res.status(400).json({ message: 'Nenhum local foi identificado em nossa base.'})
 
-    return res.json(places ?? []);
+    const placesSorted = places.sort((a, b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0);
+
+    return res.json(placesSorted ?? []);
   }
 
   async details(req: Request, res: Response) {
